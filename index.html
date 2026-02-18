@@ -3,6 +3,7 @@
 <head>
 <title>SindhCoin Cloud Mining</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
 body{
 background:linear-gradient(135deg,#0b0f2a,#141c4a);
@@ -10,75 +11,138 @@ color:white;
 font-family:Arial;
 text-align:center;
 }
+
 h1{color:gold;}
-.container{margin-top:50px;}
+
+.card{
+background:#1c245e;
+width:350px;
+margin:auto;
+padding:25px;
+border-radius:12px;
+box-shadow:0 0 20px rgba(255,215,0,0.3);
+margin-top:20px;
+}
+
 button{
-padding:15px 30px;
+padding:12px 25px;
 background:gold;
 border:none;
-font-size:18px;
 cursor:pointer;
 border-radius:8px;
+font-size:16px;
 }
+
 input{
-padding:12px;
-width:300px;
+padding:10px;
+width:90%;
 border-radius:6px;
 border:none;
 }
-.card{
-background:#1c245e;
-margin:auto;
-width:350px;
-padding:25px;
-border-radius:12px;
-box-shadow:0 0 15px rgba(255,215,0,0.3);
+
+.menu{
+display:flex;
+justify-content:center;
+gap:10px;
+margin-top:10px;
 }
+
+.menu button{
+background:#0b0f2a;
+color:white;
+}
+
 </style>
 </head>
 
 <body>
 
 <h1>🚀 SindhCoin Cloud Mining</h1>
-<p>Earn Free SINDH Daily</p>
 
-<div class="container">
+<div class="menu">
+<button onclick="show('mine')">Mining</button>
+<button onclick="show('ref')">Referral</button>
+<button onclick="show('with')">Withdraw</button>
+<button onclick="show('dash')">Dashboard</button>
+</div>
 
-<div class="card">
 
-<p>Daily Reward: <b>300 SINDH</b></p>
+<!-- Mining -->
+<div id="mine" class="card">
+<h3>Daily Mining</h3>
+<p>Reward: 300 SINDH</p>
 
-<input type="text" id="wallet" placeholder="Enter Wallet Address"><br><br>
+<input id="wallet" placeholder="Wallet Address"><br><br>
 
 <button onclick="start()">Start Mining</button>
 
 <p id="msg"></p>
 
-<hr>
-
-<h3>Live Hashrate</h3>
+<h4>Live Hashrate</h4>
 <p id="hash">0 H/s</p>
-
 </div>
 
+
+<!-- Referral -->
+<div id="ref" class="card" style="display:none">
+<h3>Your Referral</h3>
+<p>Share this link:</p>
+
+<input id="referral" value="https://sindhcoin.com/?ref=YOURWALLET">
+
+<p>Bonus: 1000 SINDH per user</p>
 </div>
+
+
+<!-- Withdraw -->
+<div id="with" class="card" style="display:none">
+<h3>Withdraw</h3>
+<p>Minimum: 5000 SINDH</p>
+
+<input placeholder="Wallet"><br><br>
+<input placeholder="Amount"><br><br>
+
+<button>Submit Request</button>
+</div>
+
+
+<!-- Dashboard -->
+<div id="dash" class="card" style="display:none">
+<h3>Dashboard</h3>
+<p>Total Mined: 0</p>
+<p>Referrals: 0</p>
+<p>Balance: 0 SINDH</p>
+</div>
+
 
 <script>
+
+function show(x){
+document.getElementById("mine").style.display="none";
+document.getElementById("ref").style.display="none";
+document.getElementById("with").style.display="none";
+document.getElementById("dash").style.display="none";
+
+document.getElementById(x).style.display="block";
+}
+
 let h=0;
 setInterval(()=>{
-h += Math.floor(Math.random()*10);
+h += Math.floor(Math.random()*5);
 document.getElementById("hash").innerHTML = h + " H/s";
 },1000);
+
 
 function start(){
 let w=document.getElementById("wallet").value;
 if(w.length<10){
-document.getElementById("msg").innerHTML="❌ Invalid Wallet";
+document.getElementById("msg").innerHTML="❌ Invalid wallet";
 }else{
-document.getElementById("msg").innerHTML="✅ Mining Activated! Rewards sent manually.";
+document.getElementById("msg").innerHTML="✅ Mining Activated. Rewards sent manually.";
 }
 }
+
 </script>
 
 </body>
-  </html>
+</html>
