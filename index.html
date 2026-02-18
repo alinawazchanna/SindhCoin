@@ -3,146 +3,185 @@
 <head>
 <title>SindhCoin Cloud Mining</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-body{
-background:linear-gradient(135deg,#0b0f2a,#141c4a);
-color:white;
-font-family:Arial;
-text-align:center;
-}
-
+body{background:linear-gradient(135deg,#0b0f2a,#141c4a);color:white;font-family:Arial;text-align:center;}
 h1{color:gold;}
-
-.card{
-background:#1c245e;
-width:350px;
-margin:auto;
-padding:25px;
-border-radius:12px;
-box-shadow:0 0 20px rgba(255,215,0,0.3);
-margin-top:20px;
-}
-
-button{
-padding:12px 25px;
-background:gold;
-border:none;
-cursor:pointer;
-border-radius:8px;
-font-size:16px;
-}
-
-input{
-padding:10px;
-width:90%;
-border-radius:6px;
-border:none;
-}
-
-.menu{
-display:flex;
-justify-content:center;
-gap:10px;
-margin-top:10px;
-}
-
-.menu button{
-background:#0b0f2a;
-color:white;
-}
-
+.card{background:#1c245e;width:350px;margin:auto;padding:25px;border-radius:12px;box-shadow:0 0 20px rgba(255,215,0,0.3);margin-top:20px;}
+button{padding:12px 25px;background:gold;border:none;cursor:pointer;border-radius:8px;font-size:16px;}
+input{padding:10px;width:90%;border-radius:6px;border:none;}
+.menu{display:flex;justify-content:center;gap:10px;margin-top:10px;}
+.menu button{background:#0b0f2a;color:white;}
 </style>
 </head>
-
 <body>
 
 <h1>🚀 SindhCoin Cloud Mining</h1>
 
 <div class="menu">
+<button onclick="show('auth')">Login/Register</button>
 <button onclick="show('mine')">Mining</button>
 <button onclick="show('ref')">Referral</button>
 <button onclick="show('with')">Withdraw</button>
 <button onclick="show('dash')">Dashboard</button>
 </div>
 
+<!-- Authentication -->
+<div id="auth" class="card">
+<h3>Login / Register</h3>
+<input id="email" type="email" placeholder="Email"><br><br>
+<input id="wallet" placeholder="Wallet Address"><br><br>
+<button onclick="register()">Register</button>
+<button onclick="login()">Login</button>
+<p id="authMsg"></p>
+</div>
 
 <!-- Mining -->
-<div id="mine" class="card">
+<div id="mine" class="card" style="display:none">
 <h3>Daily Mining</h3>
 <p>Reward: 300 SINDH</p>
-
-<input id="wallet" placeholder="Wallet Address"><br><br>
-
-<button onclick="start()">Start Mining</button>
-
-<p id="msg"></p>
-
+<button onclick="mineCoins()">Start Mining</button>
+<p id="mineMsg"></p>
 <h4>Live Hashrate</h4>
 <p id="hash">0 H/s</p>
 </div>
-
 
 <!-- Referral -->
 <div id="ref" class="card" style="display:none">
 <h3>Your Referral</h3>
 <p>Share this link:</p>
-
-<input id="referral" value="https://sindhcoin.com/?ref=YOURWALLET">
-
+<input id="referralLink" readonly>
 <p>Bonus: 1000 SINDH per user</p>
 </div>
-
 
 <!-- Withdraw -->
 <div id="with" class="card" style="display:none">
 <h3>Withdraw</h3>
 <p>Minimum: 5000 SINDH</p>
-
-<input placeholder="Wallet"><br><br>
-<input placeholder="Amount"><br><br>
-
-<button>Submit Request</button>
+<input id="withdrawWallet" placeholder="Wallet"><br><br>
+<input id="withdrawAmount" placeholder="Amount"><br><br>
+<button onclick="withdraw()">Submit Request</button>
+<p id="withdrawMsg"></p>
 </div>
-
 
 <!-- Dashboard -->
 <div id="dash" class="card" style="display:none">
 <h3>Dashboard</h3>
-<p>Total Mined: 0</p>
-<p>Referrals: 0</p>
-<p>Balance: 0 SINDH</p>
+<p id="dashMined">Total Mined: 0</p>
+<p id="dashRefs">Referrals: 0</p>
+<p id="dashBal">Balance: 0 SINDH</p>
 </div>
 
-
 <script>
+// Firebase config (Replace with your own Firebase project config)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-function show(x){
-document.getElementById("mine").style.display="none";
-document.getElementById("ref").style.display="none";
-document.getElementById("with").style.display="none";
-document.getElementById("dash").style.display="none";
-
-document.getElementById(x).style.display="block";
+// Show/Hide pages
+function show(id){
+['auth','mine','ref','with','dash'].forEach(x => document.getElementById(x).style.display='none');
+document.getElementById(id).style.display='block';
 }
 
+// Live Hashrate
 let h=0;
 setInterval(()=>{
-h += Math.floor(Math.random()*5);
-document.getElementById("hash").innerHTML = h + " H/s";
+h+=Math.floor(Math.random()*5);
+document.getElementById("hash").innerHTML=h+" H/s";
 },1000);
 
+// User Data
+let currentUser=null;
 
-function start(){
-let w=document.getElementById("wallet").value;
-if(w.length<10){
-document.getElementById("msg").innerHTML="❌ Invalid wallet";
+// Register
+function register(){
+let email=document.getElementById("email").value;
+let wallet=document.getElementById("wallet").value;
+if(email.length<5 || wallet.length<10){document.getElementById("authMsg").innerHTML="❌ Invalid input";return;}
+auth.createUserWithEmailAndPassword(email,"SindhCoin123").then((cred)=>{
+currentUser=cred.user;
+db.collection("users").doc(currentUser.uid).set({
+wallet:wallet,
+email:email,
+balance:0,
+referrals:[],
+lastClaim:0
+});
+document.getElementById("authMsg").innerHTML="✅ Registered! Use Login";
+}).catch(e=>{document.getElementById("authMsg").innerHTML=e.message});
+}
+
+// Login
+function login(){
+let email=document.getElementById("email").value;
+auth.signInWithEmailAndPassword(email,"SindhCoin123").then((cred)=>{
+currentUser=cred.user;
+document.getElementById("authMsg").innerHTML="✅ Logged in!";
+loadDashboard();
+}).catch(e=>{document.getElementById("authMsg").innerHTML=e.message});
+}
+
+// Mining
+function mineCoins(){
+if(!currentUser){document.getElementById("mineMsg").innerHTML="❌ Login first"; return;}
+let docRef=db.collection("users").doc(currentUser.uid);
+docRef.get().then(doc=>{
+let now=Date.now();
+if(now-doc.data().lastClaim<24*60*60*1000){
+document.getElementById("mineMsg").innerHTML="❌ Already claimed today";
 }else{
-document.getElementById("msg").innerHTML="✅ Mining Activated. Rewards sent manually.";
+docRef.update({
+balance:firebase.firestore.FieldValue.increment(300),
+lastClaim:now
+});
+document.getElementById("mineMsg").innerHTML="✅ 300 SINDH Added!";
+loadDashboard();
 }
+});
 }
+
+// Dashboard
+function loadDashboard(){
+if(!currentUser) return;
+db.collection("users").doc(currentUser.uid).get().then(doc=>{
+let data=doc.data();
+document.getElementById("dashMined").innerHTML="Total Mined: "+(data.balance);
+document.getElementById("dashRefs").innerHTML="Referrals: "+data.referrals.length;
+document.getElementById("dashBal").innerHTML="Balance: "+data.balance+" SINDH";
+document.getElementById("referralLink").value=window.location.href+"?ref="+currentUser.uid;
+});
+}
+
+// Withdraw
+function withdraw(){
+if(!currentUser){document.getElementById("withdrawMsg").innerHTML="❌ Login first"; return;}
+let wallet=document.getElementById("withdrawWallet").value;
+let amt=parseInt(document.getElementById("withdrawAmount").value);
+if(amt<5000){document.getElementById("withdrawMsg").innerHTML="❌ Minimum 5000"; return;}
+db.collection("withdrawRequests").add({
+userId:currentUser.uid,
+amount:amt,
+wallet:wallet,
+status:"pending",
+timestamp:Date.now()
+});
+document.getElementById("withdrawMsg").innerHTML="✅ Request Submitted!";
+}
+
+// Auto load dashboard every 5 sec
+setInterval(loadDashboard,5000);
 
 </script>
-
 </body>
 </html>
