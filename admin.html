@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SindhCoin Admin Panel</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>🚀 SindhCoin Admin Panel</h1>
+
+<h2>Withdraw Requests</h2>
+<table id="withdrawTable">
+<tr><th>User ID</th><th>Wallet</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+</table>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+const db = firebase.firestore();
+
+function loadWithdraws(){
+let table=document.getElementById("withdrawTable");
+table.innerHTML='<tr><th>User ID</th><th>Wallet</th><th>Amount</th><th>Status</th><th>Action</th></tr>';
+db.collection("withdrawRequests").where("status","==","pending").get().then(snapshot=>{
+snapshot.forEach(doc=>{
+let data=doc.data();
+let tr=document.createElement("tr");
+tr.innerHTML=`<td>${data.userId}</td><td>${data.wallet}</td><td>${data.amount}</td><td>${data.status}</td>
+<td>
+<button onclick="approve('${doc.id}','${data.userId}',${data.amount})">Approve</button>
+<button onclick="reject('${doc.id}')">Reject</button>
+</td>`;
+table.appendChild(tr);
+});
+});
+}
+
+function approve(docId,userId,amount){
+db.collection("users").doc(userId).update({balance:firebase.firestore.FieldValue.increment(-amount)});
+db.collection("withdrawRequests").doc(docId).update({status:"approved"});
+loadWithdraws();
+}
+
+function reject(docId){
+db.collection("withdrawRequests").doc(docId).update({status:"rejected"});
+loadWithdraws();
+}
+
+loadWithdraws();
+</script>
+</body>
+</html>
